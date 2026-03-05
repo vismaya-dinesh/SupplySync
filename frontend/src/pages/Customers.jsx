@@ -1,116 +1,254 @@
 import { useEffect, useState } from "react";
-import Navbar from "../components/Navbar";
 import API from "../api/api";
+
+import DashboardLayout from "../layout/DashboardLayout";
+import PageTransition from "../components/PageTransition";
+
+import {
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Stack
+} from "@mui/material";
+
+import { DataGrid } from "@mui/x-data-grid";
 
 function Customers() {
 
   const [customers, setCustomers] = useState([]);
 
+  const [open, setOpen] = useState(false);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+
+  const [editingCustomer, setEditingCustomer] = useState(null);
 
   const fetchCustomers = async () => {
-    const res = await API.get("/customers/");
-    setCustomers(res.data);
+
+    try {
+
+      const res = await API.get("/customers/");
+
+      setCustomers(res.data);
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
   };
 
   useEffect(() => {
+
     fetchCustomers();
+
   }, []);
 
-  const addCustomer = async () => {
+  const handleOpen = () => {
 
-    await API.post("/customers/", {
-      name: name,
-      email: email,
-      phone: phone,
-      address: address
-    });
+    setEditingCustomer(null);
 
     setName("");
     setEmail("");
-    setPhone("");
-    setAddress("");
 
-    fetchCustomers();
+    setOpen(true);
+
   };
+
+  const handleEdit = (customer) => {
+
+    setEditingCustomer(customer);
+
+    setName(customer.name);
+    setEmail(customer.email);
+
+    setOpen(true);
+
+  };
+
+  const handleClose = () => {
+
+    setOpen(false);
+
+  };
+
+  const handleSubmit = async () => {
+
+    try {
+
+      if (editingCustomer) {
+
+        await API.put(`/customers/${editingCustomer.id}`, {
+          name,
+          email
+        });
+
+      } else {
+
+        await API.post("/customers/", {
+          name,
+          email
+        });
+
+      }
+
+      fetchCustomers();
+
+      handleClose();
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
+  const handleDelete = async (id) => {
+
+    try {
+
+      await API.delete(`/customers/${id}`);
+
+      fetchCustomers();
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
+  const columns = [
+
+    {
+      field: "name",
+      headerName: "Customer Name",
+      flex: 1
+    },
+
+    {
+      field: "email",
+      headerName: "Email",
+      flex: 1
+    },
+
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1,
+      renderCell: (params) => (
+
+        <Stack direction="row" spacing={1}>
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleEdit(params.row)}
+          >
+            Edit
+          </Button>
+
+          <Button
+            variant="contained"
+            color="error"
+            size="small"
+            onClick={() => handleDelete(params.row.id)}
+          >
+            Delete
+          </Button>
+
+        </Stack>
+
+      )
+    }
+
+  ];
 
   return (
 
-    <div>
+    <DashboardLayout>
 
-      <Navbar />
+      <PageTransition>
 
-      <div style={{ marginLeft: "220px", padding: "30px" }}>
+        <Typography variant="h4" gutterBottom>
+          Customers
+        </Typography>
 
-        <h1>Customers</h1>
-
-        <h3>Add Customer</h3>
-
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <input
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          placeholder="Phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-
-        <input
-          placeholder="Address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
-
-        <button onClick={addCustomer}>
+        <Button
+          variant="contained"
+          sx={{ mb: 2 }}
+          onClick={handleOpen}
+        >
           Add Customer
-        </button>
+        </Button>
 
-        <hr />
+        <div style={{ height: 450, width: "100%" }}>
 
-        <h3>Customer List</h3>
+          <DataGrid
+            rows={customers}
+            columns={columns}
+            getRowId={(row) => row.id}
+          />
 
-        <table border="1" cellPadding="10">
+        </div>
 
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Address</th>
-            </tr>
-          </thead>
+        <Dialog open={open} onClose={handleClose}>
 
-          <tbody>
+          <DialogTitle>
+            {editingCustomer ? "Edit Customer" : "Add Customer"}
+          </DialogTitle>
 
-            {customers.map((c) => (
-              <tr key={c.id}>
-                <td>{c.name}</td>
-                <td>{c.email}</td>
-                <td>{c.phone}</td>
-                <td>{c.address}</td>
-              </tr>
-            ))}
+          <DialogContent>
 
-          </tbody>
+            <TextField
+              label="Customer Name"
+              fullWidth
+              margin="dense"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-        </table>
+            <TextField
+              label="Email"
+              fullWidth
+              margin="dense"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-      </div>
+          </DialogContent>
 
-    </div>
+          <DialogActions>
+
+            <Button onClick={handleClose}>
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+            >
+              Save
+            </Button>
+
+          </DialogActions>
+
+        </Dialog>
+
+      </PageTransition>
+
+    </DashboardLayout>
+
   );
+
 }
 
 export default Customers;

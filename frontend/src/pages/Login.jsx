@@ -1,56 +1,157 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import API from "../api/api";
+
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Stack
+} from "@mui/material";
+
+import { motion } from "framer-motion";
 
 function Login() {
 
+  const navigate = useNavigate();
+
+  const [isRegister, setIsRegister] = useState(false);
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
+  const handleSubmit = async () => {
 
     try {
 
-      const res = await API.post("/auth/login", {
-        email,
-        password
-      });
+      if (isRegister) {
 
-      localStorage.setItem("token", res.data.access_token);
+        await API.post("/auth/register", {
+          name,
+          email,
+          password
+        });
 
-      window.location.href = "/dashboard";
+        alert("Registration successful");
 
-    } catch (error) {
-      alert("Login failed");
+        setIsRegister(false);
+
+      } else {
+
+        const res = await API.post("/auth/login", {
+          email,
+          password
+        });
+
+        localStorage.setItem("token", res.data.access_token);
+
+        navigate("/dashboard");
+
+      }
+
+    } catch (err) {
+
+      alert("Authentication failed");
+
     }
 
   };
 
   return (
-    <div style={{padding: "40px"}}>
 
-      <h2>SupplySync Login</h2>
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "#f8fafc"
+      }}
+    >
 
-      <input
-        placeholder="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
 
-      <br/><br/>
+        <Card sx={{ width: 400 }}>
 
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+          <CardContent>
 
-      <br/><br/>
+            <Typography
+              variant="h4"
+              align="center"
+              gutterBottom
+            >
+              SupplySync
+            </Typography>
 
-      <button onClick={handleLogin}>
-        Login
-      </button>
+            <Typography
+              variant="h6"
+              align="center"
+              gutterBottom
+            >
+              {isRegister ? "Create Account" : "Login"}
+            </Typography>
 
-    </div>
+            <Stack spacing={2} sx={{ mt: 2 }}>
+
+              {isRegister && (
+
+                <TextField
+                  label="Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+
+              )}
+
+              <TextField
+                label="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              <TextField
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+              >
+                {isRegister ? "Register" : "Login"}
+              </Button>
+
+              <Button
+                onClick={() => setIsRegister(!isRegister)}
+              >
+                {isRegister
+                  ? "Already have an account? Login"
+                  : "Create new account"}
+              </Button>
+
+            </Stack>
+
+          </CardContent>
+
+        </Card>
+
+      </motion.div>
+
+    </Box>
+
   );
+
 }
 
 export default Login;

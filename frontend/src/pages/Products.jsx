@@ -1,115 +1,284 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
-import Navbar from "../components/Navbar";
+
+import DashboardLayout from "../layout/DashboardLayout";
+import PageTransition from "../components/PageTransition";
+
+import {
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Stack,
+  Chip
+} from "@mui/material";
+
+import { DataGrid } from "@mui/x-data-grid";
 
 function Products() {
 
   const [products, setProducts] = useState([]);
+
+  const [open, setOpen] = useState(false);
+
   const [name, setName] = useState("");
-  const [sku, setSku] = useState("");
   const [price, setPrice] = useState("");
-  const [stock, setStock] = useState("");
+  const [stockQuantity, setStockQuantity] = useState("");
+
+  const [editingProduct, setEditingProduct] = useState(null);
 
   const fetchProducts = async () => {
-    const res = await API.get("/products/");
-    setProducts(res.data);
+
+    try {
+
+      const res = await API.get("/products/");
+
+      setProducts(res.data);
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
   };
 
   useEffect(() => {
+
     fetchProducts();
+
   }, []);
 
-  const addProduct = async () => {
+  const handleOpen = () => {
 
-    await API.post("/products/", {
-      name: name,
-      sku: sku,
-      price: parseFloat(price),
-      stock_quantity: parseInt(stock)
-    });
+    setEditingProduct(null);
 
     setName("");
-    setSku("");
     setPrice("");
-    setStock("");
+    setStockQuantity("");
 
-    fetchProducts();
+    setOpen(true);
+
   };
+
+  const handleEdit = (product) => {
+
+    setEditingProduct(product);
+
+    setName(product.name);
+    setPrice(product.price);
+    setStockQuantity(product.stock_quantity);
+
+    setOpen(true);
+
+  };
+
+  const handleClose = () => {
+
+    setOpen(false);
+
+  };
+
+  const handleSubmit = async () => {
+
+    try {
+
+      const payload = {
+        name,
+        price,
+        stock_quantity: parseInt(stockQuantity)
+      };
+
+      if (editingProduct) {
+
+        await API.put(`/products/${editingProduct.id}`, payload);
+
+      } else {
+
+        await API.post("/products/", payload);
+
+      }
+
+      fetchProducts();
+
+      handleClose();
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
+  const handleDelete = async (id) => {
+
+    try {
+
+      await API.delete(`/products/${id}`);
+
+      fetchProducts();
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
+  const columns = [
+
+    {
+      field: "name",
+      headerName: "Product",
+      flex: 1
+    },
+
+    {
+      field: "price",
+      headerName: "Price",
+      flex: 1
+    },
+
+    {
+      field: "stock_quantity",
+      headerName: "Stock",
+      flex: 1,
+      renderCell: (params) => {
+
+        const qty = params.row.stock_quantity;
+
+        return (
+          <Chip
+            label={qty}
+            color={qty < 10 ? "error" : "success"}
+          />
+        );
+
+      }
+    },
+
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1,
+      renderCell: (params) => (
+
+        <Stack direction="row" spacing={1}>
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleEdit(params.row)}
+          >
+            Edit
+          </Button>
+
+          <Button
+            variant="contained"
+            color="error"
+            size="small"
+            onClick={() => handleDelete(params.row.id)}
+          >
+            Delete
+          </Button>
+
+        </Stack>
+
+      )
+    }
+
+  ];
 
   return (
 
-    <div>
+    <DashboardLayout>
 
-      <Navbar />
+      <PageTransition>
 
-      <div style={{ marginLeft: "220px", padding: "30px" }}>
+        <Typography variant="h4" gutterBottom>
+          Products
+        </Typography>
 
-        <h1>Products</h1>
-
-        <h3>Add Product</h3>
-
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <input
-          placeholder="SKU"
-          value={sku}
-          onChange={(e) => setSku(e.target.value)}
-        />
-
-        <input
-          placeholder="Price"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-        />
-
-        <input
-          placeholder="Stock"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-        />
-
-        <button onClick={addProduct}>
+        <Button
+          variant="contained"
+          sx={{ mb: 2 }}
+          onClick={handleOpen}
+        >
           Add Product
-        </button>
+        </Button>
 
-        <hr />
+        <div style={{ height: 450, width: "100%" }}>
 
-        <h3>Product List</h3>
+          <DataGrid
+            rows={products}
+            columns={columns}
+            getRowId={(row) => row.id}
+          />
 
-        <table border="1" cellPadding="10">
+        </div>
 
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>SKU</th>
-              <th>Price</th>
-              <th>Stock</th>
-            </tr>
-          </thead>
+        <Dialog open={open} onClose={handleClose}>
 
-          <tbody>
+          <DialogTitle>
+            {editingProduct ? "Edit Product" : "Add Product"}
+          </DialogTitle>
 
-            {products.map((p) => (
-              <tr key={p.id}>
-                <td>{p.name}</td>
-                <td>{p.sku}</td>
-                <td>{p.price}</td>
-                <td>{p.stock_quantity}</td>
-              </tr>
-            ))}
+          <DialogContent>
 
-          </tbody>
+            <TextField
+              label="Product Name"
+              fullWidth
+              margin="dense"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-        </table>
+            <TextField
+              label="Price"
+              fullWidth
+              margin="dense"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
 
-      </div>
+            <TextField
+              label="Stock Quantity"
+              fullWidth
+              margin="dense"
+              value={stockQuantity}
+              onChange={(e) => setStockQuantity(e.target.value)}
+            />
 
-    </div>
+          </DialogContent>
+
+          <DialogActions>
+
+            <Button onClick={handleClose}>
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+            >
+              Save
+            </Button>
+
+          </DialogActions>
+
+        </Dialog>
+
+      </PageTransition>
+
+    </DashboardLayout>
+
   );
+
 }
 
 export default Products;

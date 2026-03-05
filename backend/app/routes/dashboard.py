@@ -1,13 +1,20 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
+from sqlalchemy import func
+
 from app.models.order import Order
 from app.models.product import Product
 from app.models.customer import Customer
+from app.models.order import OrderItem
 from app import db
 
-dashboard_bp = Blueprint("dashboard", __name__)
 
-# DashBoard Overview
+dashboard_bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
+
+
+# -------------------------
+# Dashboard Overview
+# -------------------------
 
 @dashboard_bp.route("/overview", methods=["GET"])
 @jwt_required()
@@ -17,15 +24,12 @@ def dashboard_overview():
     products = Product.query.all()
     customers = Customer.query.all()
 
-    # revenue
     total_revenue = sum(order.total_amount for order in orders)
 
-    # counts
     total_orders = len(orders)
     total_products = len(products)
     total_customers = len(customers)
 
-    # low stock products
     low_stock_products = []
 
     for product in products:
@@ -35,7 +39,7 @@ def dashboard_overview():
                 "name": product.name,
                 "stock_quantity": product.stock_quantity
             })
-    
+
     return jsonify({
         "total_revenue": total_revenue,
         "total_orders": total_orders,
@@ -44,9 +48,10 @@ def dashboard_overview():
         "low_stock_products": low_stock_products
     }), 200
 
-from app.models.order import OrderItem
 
-# top sellling products
+# -------------------------
+# Top Selling Products
+# -------------------------
 
 @dashboard_bp.route("/top-products", methods=["GET"])
 @jwt_required()
@@ -56,22 +61,61 @@ def top_products():
         db.session.query(
             Product.id,
             Product.name,
-            db.func.sum(OrderItem.quantity).label("total_sold")
+            func.coalesce(func.sum(OrderItem.quantity), 0).label("quantity")
         )
-        .join(OrderItem, Product.id == OrderItem.product_id)
-        .group_by(Product.id)
-        .order_by(db.func.sum(OrderItem.quantity).desc())
+        .outerjoin(OrderItem, Product.id == OrderItem.product_id)
+        .group_by(Product.id, Product.name)
+        .order_by(func.sum(OrderItem.quantity).desc())
         .limit(5)
         .all()
     )
 
-    top_products = []
+    products = []
 
     for r in results:
-        top_products.append({
+        products.append({
             "product_id": r.id,
             "name": r.name,
-            "total_sold": int(r.total_sold)
+            "quantity": int(r.quantity)
         })
 
-    return jsonify(top_products), 200
+    return jsonify(products), 200
+
+# -------------------------
+# Recent Orders
+# -------------------------
+
+@dashboard_bp.route("/recent-orders", methods=["GET"])
+@jwt_required()
+def recent_orders():
+
+    orders = (
+        Order.query
+        .order_by(Order.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    result = []
+
+    for order in orders:
+
+        items = []
+
+        for item in order.items:
+
+            product = Product.query.get(item.product_id)
+
+            items.append({
+                "product_name": product.name if product else "Unknown Product",
+                "quantity": item.quantity
+            })
+
+        result.append({
+            "order_id": order.id,
+            "products": items,
+            "total_amount": order.total_amount,
+            "created_at": order.created_at.strftime("%Y-%m-%d %H:%M")
+        })
+
+    return jsonify(result), 200
