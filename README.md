@@ -1,73 +1,37 @@
 # SupplySync
 
-SupplySync is a full-stack inventory and order management system designed for small businesses to manage customers, products, and orders efficiently.
+SupplySync is a full-stack inventory management and order tracking system built with React and Flask.
 
 ## Features
 
-- JWT Authentication
-- Customer Management
-- Product Inventory Management
-- Order Creation with Multiple Items
-- Automatic Stock Deduction
-- Dashboard Analytics
-- Low Stock Alerts
-- Top Selling Products
+- User authentication with JWT
+- Product management
+- Customer management
+- Order management
+- Inventory tracking
+- Dashboard analytics
+- Low stock alerts
+- Top selling products visualization
 
 ## Tech Stack
 
-Frontend:
+Frontend
 - React
+- Material UI
 - Vite
-- Axios
-- React Router
 
-Backend:
+Backend
 - Flask
 - SQLAlchemy
 - JWT Authentication
 
-Database:
+Database
 - SQLite
 
-## System Architecture
+## Screens
 
-React Frontend → Flask REST API → SQLAlchemy → SQLite Database
-
-## API Endpoints
-
-Authentication:
-POST /api/auth/login  
-POST /api/auth/register
-
-Products:
-GET /api/products  
-POST /api/products  
-
-Customers:
-GET /api/customers  
-POST /api/customers  
-
-Orders:
-POST /api/orders  
-GET /api/orders  
-
-Dashboard:
-GET /api/dashboard/overview  
-GET /api/dashboard/top-products  
-
-## Running the Project
-
-Backend:
-
-cd backend
-python run.py
-
-
-Frontend:
-
-cd frontend
-npm install
-npm run dev
-
-Open:
-http://localhost:5173
+- Dashboard analytics
+- Products CRUD
+- Customers CRUD
+- Order creation
+- Inventory monitoring
