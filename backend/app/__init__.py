@@ -19,7 +19,7 @@ def create_app():
         r"/api/*": {
             "origins": [
                 "http://localhost:5174",
-                "https://supply-sync-ruby.vercel.app/"
+                "https://supply-sync-ruby.vercel.app"
             ]
         }
     })
