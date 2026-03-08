@@ -21,7 +21,7 @@ function Login() {
 
   const [isRegister, setIsRegister] = useState(false);
 
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -55,13 +55,15 @@ function Login() {
       }
 
     } catch (error) {
-        console.log(error.response);
 
-        alert(
-          error.response?.data?.message || 
-          "Something went wrong"
-        );
-      }
+      console.log(error.response);
+
+      alert(
+        error.response?.data?.message ||
+        "Something went wrong"
+      );
+
+    }
 
   };
 
@@ -108,9 +110,9 @@ function Login() {
               {isRegister && (
 
                 <TextField
-                  label="Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  label="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
 
               )}
