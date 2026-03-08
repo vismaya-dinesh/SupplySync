@@ -4,7 +4,6 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .config import Config
 
-
 db = SQLAlchemy()
 jwt = JWTManager()
 
@@ -14,21 +13,36 @@ def create_app():
 
     db.init_app(app)
     jwt.init_app(app)
-    CORS(app)
 
+    # CORS configuration (VERY IMPORTANT for Vercel frontend)
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": [
+                "http://localhost:5174",
+                "https://supply-sync-ruby.vercel.app/"
+            ]
+        }
+    })
+
+    # Import models
     from app.models.user import User
     from app.models.customer import Customer
     from app.models.product import Product
     from app.models.order import Order, OrderItem
 
+    # Register routes
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+
     from app.routes.customers import customers_bp
     app.register_blueprint(customers_bp, url_prefix="/api/customers")
+
     from app.routes.products import products_bp
     app.register_blueprint(products_bp, url_prefix="/api/products")
+
     from app.routes.orders import orders_bp
     app.register_blueprint(orders_bp, url_prefix="/api/orders")
+
     from app.routes.dashboard import dashboard_bp
     app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
 
