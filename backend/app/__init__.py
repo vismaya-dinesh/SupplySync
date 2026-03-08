@@ -14,15 +14,12 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
 
-    # CORS configuration (VERY IMPORTANT for Vercel frontend)
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": [
-                "http://localhost:5174",
-                "https://supply-sync-ruby.vercel.app"
-            ]
-        }
-    })
+    # Proper CORS configuration
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": "*"}},
+        supports_credentials=True
+    )
 
     # Import models
     from app.models.user import User
