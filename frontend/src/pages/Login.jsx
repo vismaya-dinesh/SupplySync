@@ -32,7 +32,7 @@ function Login() {
       if (isRegister) {
 
         await API.post("/auth/register", {
-          name,
+          username,
           email,
           password
         });
