@@ -54,11 +54,14 @@ function Login() {
 
       }
 
-    } catch (err) {
+    } catch (error) {
+        console.log(error.response);
 
-      alert("Authentication failed");
-
-    }
+        alert(
+          error.response?.data?.message || 
+          "Something went wrong"
+        );
+      }
 
   };
 
