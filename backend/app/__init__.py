@@ -21,6 +21,9 @@ def create_app():
         supports_credentials=True
     )
 
+    with app.app_context():
+        db.create_all()
+
     # Import models
     from app.models.user import User
     from app.models.customer import Customer
