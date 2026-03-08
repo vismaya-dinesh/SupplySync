@@ -35,3 +35,8 @@ Database
 - Customers CRUD
 - Order creation
 - Inventory monitoring
+
+## Live Demo
+
+Frontend: https://supply-sync-ruby.vercel.app  
+Backend API: https://supplysync-7jx6.onrender.com
